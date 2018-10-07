@@ -55,12 +55,27 @@ dm.df.head()
 3  7795    Male      0172 12394857   another one
 4  9237  Female      0176 29506463    nice place
 
+# It should be noted, though, that if you leave a column out, it will be dropped. Eg.:
+
+cols = {
+    #'ID':               'id', <- comment ID out
+    'Gender':           'gender',
+    'CelPhoneNumber':   'cel_phone_number',
+    'HouseAddress':     'house_address',
+}
+
+dm = DataMuncher(df = 'example_data.csv', columns_name_map = cols)
+dm.df.head()
+   gender   cel_phone_number house_address
+0  Female      0176 99856912   some street
+1  Male        0176 12385619   abcdefg, 12
+2  Male        0174 12359500   kblstr,  37
+3  Male        0172 12394857   another one
+4  Female      0176 29506463    nice place
 ```
 
 
 ## TODO's
-* fix the columns mapping
-    * actually, what we want is some way of parsing the header files to all lower cased snake_names automatically, so we don't need to build a dictionary.
 * all data modification methods should return DataMuncher's, so we can chain methods.
 
 

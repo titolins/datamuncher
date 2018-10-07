@@ -25,29 +25,51 @@ import numpy as np
 
 class DataMuncher(object):
     def __init__(self, df = None, columns_name_map = None):
+        '''
+        Constructor for DataMuncher class objects.
+        Args
+            - df (string | pandas.DataFrame) - name of file to be loaded or
+                dataframe.
+            - columns_name_map (dict[string]: string) - translation dictionary
+                for data's column names.
+        '''
+        # if df is None, we simply initialize an empty DataFrame
         if df is None:
             self.df = pd.DataFrame()
+        # for strings, we try to initialize an empty dataframe with the
+        # indicated file's data
         elif type(df) == str:
             self.df = pd.read_csv(df)
+        # if it's a data frame, we just assign it
         elif type(df) == pd.DataFrame:
             self.df = df
+        # else, value error
         else:
             raise ValueError("df should either be a str or pd.DataFrame")
-        '''
+        # columns translation. if no dict is passed, we do nothing
         if columns_name_map is not None:
+            # create an array to keep notice of which columns are not in the
+            # translation dict
+            drop_cols = []
+            for c in data.columns:
+                if c not in columns_name_map.keys():
+                    drop_cols.append(c)
+            # if there are missing columns in the dictionary, we just drop them
+            if len(drop_cols) > 0:
+                self.df = self.df.drop(columns = drop_cols)
+            # then apply the translation
             self.df.columns = [
                 columns_name_map[c] for c in self.df.columns]
-        '''
 
     def standardize(self, label, df = None):
-        """
+        '''
         standardizes a series with name ``label'' within the pd.DataFrame
         ``df''.
         taken from:
         https://github.com/pandas-dev/pandas/issues/18028
         Returns:
             - standardized pd.Series relative to the label's column
-        """
+        '''
         if df is None:
             df = self.df.copy(deep=True)
         series = df.loc[:, label]

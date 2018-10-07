@@ -68,9 +68,7 @@ dm.df.head()
 
 
 #### Author
-Tito Lins
-
-07.10.2018
-
+Tito Lins</br>
+07.10.2018</br>
 Berlin
 

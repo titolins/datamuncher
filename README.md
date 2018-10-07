@@ -79,9 +79,6 @@ dm.df.head()
 * all data modification methods should return DataMuncher's, so we can chain methods.
 
 
-
-
-
 #### Author
 Tito Lins</br>
 07.10.2018</br>

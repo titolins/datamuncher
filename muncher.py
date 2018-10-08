@@ -4,15 +4,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 class DataMuncher(object):
     def __init__(self, df = None, columns_name_map = None):
         '''
         Constructor for DataMuncher class objects.
         Args
-            - df (string | pandas.DataFrame) - name of file to be loaded or
+        ----
+            df (string | pandas.DataFrame) - name of file to be loaded or
                 dataframe.
-            - columns_name_map (dict[string]: string) - translation dictionary
+            columns_name_map (dict[string]: string) - translation dictionary
                 for data's column names.
         '''
         # if df is None, we simply initialize an empty DataFrame
@@ -49,8 +49,14 @@ class DataMuncher(object):
         ``df''.
         taken from:
         https://github.com/pandas-dev/pandas/issues/18028
-        Returns:
-            - standardized pd.Series relative to the label's column
+        Args
+        ----
+            label (string) - label of column to be standardized
+            df (pd.DataFrame) - if not to use dm own's initialized df
+        Returns
+        ----
+            new DataMuncher with standardized pd.Series relative to the label's
+            column
         '''
         if df is None:
             df = self.df.copy(deep=True)
@@ -58,12 +64,14 @@ class DataMuncher(object):
         avg = series.mean()
         stdv = series.std()
         series_standardized = (series - avg) / stdv
-        return series_standardized
+        df[label] = series_standardized
+        return DataMuncher(df = df)
 
-    def plot_many_dep(self, dep, n_cols, kind, df = None):
+    def plot_many_x_y(self, dep, n_cols, kind, df = None):
         '''
         Method for plotting all independent variables vs the dependent one at once
-        Args:
+        Args
+        ----
             df (pd.DataFrame) - respective dataframe. Passing it as an
                 argument here because we might need this data to be encoded
                 (so we can have methods for simple encoding and one hot
@@ -91,20 +99,42 @@ class DataMuncher(object):
                 col = 0
                 row = row + 1
             # plot
-            # ideally, this method should be passed as a paramenter if we want
-            # better code reutilisation. but for that we would need wrappers..
-            df[[c,dep]].plot(x = c,
-                             y = dep,
-                             kind = kind,
-                             ax=axs[row][col],
-                             label = '{} ~ {}'.format(dep, c))
+            self.plot_one_x_y(c, dep, kind, ax = axs[row][col], df = df)
             col = col + 1
         plt.show()
 
-    def plot_many(self, n_cols, kind, df = None):
+    def plot_one_x_y(self, x, y, kind, ax = None, df = None):
+        '''
+        Plots an x, y chart
+        Args
+        ----
+            x (string) - x-axis column label.
+            y (string) - y-axis column label.
+            kind (string) - plot type.
+            ax (matplotlib.AxesSubplot) - axis in which the plot should go.
+            df (pandas.DataFrame) - if using a df that's not the one dm got
+                instantiated with.
+        '''
+        if df is None:
+            df = self.df.copy(deep=True)
+        if ax is None:
+            df[[x,y]].plot(x = x,
+                           y = y,
+                           kind = kind,
+                           label = '{} ~ {}'.format(y, x))
+            plt.show()
+        else:
+            df[[x,y]].plot(x = x,
+                           y = y,
+                           kind = kind,
+                           ax = ax,
+                           label = '{} ~ {}'.format(y, x))
+
+    def plot_all_x(self, n_cols, kind, df = None):
         '''
         Method for plotting many variables at once.
-        Args:
+        Args
+        ----
             df (pd.DataFrame) - respective dataframe. Passing it as an
                 argument here because we might need this data to be encoded
                 (so we can have methods for simple encoding and one hot
@@ -118,55 +148,82 @@ class DataMuncher(object):
         n_rows = math.ceil(len_data/n_cols)
         _, axs = plt.subplots(n_rows, n_cols)
         col = row = 0
-        print('len(df.columns): {0}'.format(len(df.columns)))
-        print('n_cols: {0}\nn_rows: {1}'.format(n_cols, n_rows))
         for c in df.columns:
-            print('row: {0}\ncol: {1}'.format(row, col))
             if col == n_cols:
                 col = 0
                 row = row + 1
-            df[[c]].plot(kind = kind,
-                         ax=axs[row][col])
+            self.plot_one_x(c, kind, ax = axs[row][col], df = df)
             col = col + 1
         plt.show()
 
+    def plot_one_x(self, x, kind, ax = None, df = None):
+        if df is None:
+            df = self.df.copy(deep=True)
+        if ax is not None:
+            df[[x]].plot(kind = kind, ax = ax)
+        else:
+            df[[x]].plot(kind = kind)
+            plt.show()
+
     def encode_target_simple(self, target_column, df = None):
-        """Add column to df with integers for the target.
+        '''
+        Add column to df with integers for the target.
         http://chrisstrelioff.ws/sandbox/2015/06/08/decision_trees_in_python_with_scikit_learn_and_pandas.html
         Args
         ----
-        df -- pandas DataFrame.
+        df - pandas DataFrame.
         target_column -- column to map to int, producing
                          new Target column.
-
         Returns
-        -------
-        df_mod -- modified DataFrame.
-        targets -- list of target names.
-        """
+        ----
+        new DataMuncher, with respective dataframe with encoded target col
+        '''
         if df is None:
             df = self.df.copy(deep = True)
         targets = df[target_column].unique()
         map_to_int = {name: n for n, name in enumerate(targets)}
         df[target_column] = df[target_column].replace(map_to_int)
-        return (df, targets)
+        return DataMuncher(df = df)
 
     def encode_all_simple(self, df = None):
         '''
         Runs `encode_target_simple` for all dataframe columns that have a numpy
         object type (`np.dtype('O')`).
+        Args
+        ----
+            df (pd.DataFrame) - pandas data frame containing data to be encoded
+        Returns
+        ----
+            DataMuncher - so we chain methods! Yay
         '''
         if df is None:
             df = self.df.copy(deep = True)
+        # iterate cols and cols_types
         for c, c_type in df.dtypes.to_dict().items():
+            # check it if it's a numpy object type
             if c_type == np.dtype('O'):
-                df, _ = self.encode_target_simple(c, df = df)
-        return df
+                # if so, encode it
+                df = self.encode_target_simple(c, df = df).df
+        return DataMuncher(df = df)
 
-    def plot_scatter_all_simple_encode(self, dependent, n_cols = 4, df = None):
+    def plot_all_x_simple_encode(self, kind, n_cols = 4, df = None):
+        '''
+        Plots every variable in the dataframe.
+        Args
+        ----
+            kind (string) - kind of chart to be plotted.
+            n_cols (int) - number of columns to divide the plot area into.
+            df (pd.DataFrame) - if using another dataframe.
+        '''
+        if df is None:
+            df = self.df.copy(deep=True)
+        self.encode_all_simple(df = df).plot_all_x(n_cols, kind, df = df)
+
+    def plot_scatter_dep_simple_encode(self, dependent, n_cols = 4, df = None):
         '''
         Scatter plots all variables against the dependent indicated
-        Args:
+        Args
+        ----
             dependent (string) - name of the dependent variable to plot against
             n_cols (int) - number of columns to be plotted in the chart area.
         '''
@@ -175,20 +232,34 @@ class DataMuncher(object):
         self.plot_many_dep(dependent,
                            n_cols,
                            'scatter',
-                           df = self.encode_all_simple(df = df))
+                           df = self.encode_all_simple(df = df).df)
 
     def plot_box_all_simple_encode(self, n_cols = 4, df = None):
+        '''
+        Method for plotting boxes for all variables after simple encode
+        Args
+        ----
+            n_cols (int) - number of columns to divide plot area into
+            df (pd.DataFrame) - if using dm as a parser to other df
+        '''
         if df is None:
             df = self.df.copy(deep = True)
-        self.plot_many(n_cols,
-                       kind = 'box',
-                       df = self.encode_all_simple(df = df))
+        self.plot_all_x(n_cols,
+                        kind = 'box',
+                        df = self.encode_all_simple(df = df).df)
 
     def plot_density_all_simple_encode(self, n_cols = 4, df = None):
+        '''
+        Method for plotting the density for all variables after simple encode
+        Args
+        ----
+            n_cols (int) - number of columns to divide plot area into
+            df (pd.DataFrame) - if using dm as a parser to other df
+        '''
         if df is None:
             df = self.df.copy(deep = True)
-        self.plot_many(n_cols,
-                       kind = 'density',
-                       df = self.encode_all_simple(df = df))
+        self.plot_all_x(n_cols,
+                        kind = 'density',
+                        df = self.encode_all_simple(df = df).df)
 
 

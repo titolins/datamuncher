@@ -10,6 +10,8 @@
 
 ## Usage
 
+### Basics
+
 * DataMuncher can be instantiated by pointing to a file, passing a pandas.DataFrame or just by itself.
 ```
 # passing a string to the constructor will be interpreted as a filename
@@ -23,6 +25,10 @@ dm = DataMuncher(df)
 
 # no data parameter
 dm = DataMuncher()
+
+# anything else raises an ValueError
+dm = DataMuncher(df = 1)
+ValueError: df should either be a str or pd.DataFrame
 ```
 
 * If a filename or pandas.DataFrame was passed to the constructor, it can be later acessed by `dm.df`.
@@ -74,10 +80,36 @@ dm.df.head()
 4  Female      0176 29506463    nice place
 ```
 
+### Encoding
+* Encoding any or all attributes should be pretty straight forward (we are saying simple encoding here, basically assigning numbers to the categories/labels).
+```
+# after instantiating.. encoding one attribute
+dm = dm.encode_target_simple('gender')
+
+# encoding all attributes
+dm = dm.encode_all_simple()
+```
+
+### Plotting
+* Plotting one variable charts:
+```
+# after instantiating.. plotting a one variable chart by itself
+dm.encode_target_simple('gender').plot_one_x('gender', kind = 'hist')
+
+# what we're doing here is first enconding the gender column,
+# considering that we need a numerical value in this case
+# The returned value is another DataMuncher, so we can chain the plot method
+
+# plotting all attributes at once
+dm.plot_all_x_simple_encode('hist', n_cols = 4)
+
+# the plot_all_x_simple_encode first uses the encode_all_simple method
+# and then divides the plot area in 4 columns and as many rows it needs,
+# and plot every variable in the dataframe.
+```
 
 ## TODO's
-* all data modification methods should return DataMuncher's, so we can chain methods.
-
+* implement one hot encoding
 
 #### Author
 Tito Lins</br>

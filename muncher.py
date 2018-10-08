@@ -67,7 +67,7 @@ class DataMuncher(object):
         df[label] = series_standardized
         return DataMuncher(df = df)
 
-    def plot_many_x_y(self, dep, n_cols, kind, df = None):
+    def plot_all_x_y(self, dep, n_cols, kind, df = None):
         '''
         Method for plotting all independent variables vs the dependent one at once
         Args
@@ -229,10 +229,10 @@ class DataMuncher(object):
         '''
         if df is None:
             df = self.df.copy(deep = True)
-        self.plot_many_dep(dependent,
-                           n_cols,
-                           'scatter',
-                           df = self.encode_all_simple(df = df).df)
+        self.plot_all_x_y(dependent,
+                          n_cols,
+                          'scatter',
+                          df = self.encode_all_simple(df = df).df)
 
     def plot_box_all_simple_encode(self, n_cols = 4, df = None):
         '''

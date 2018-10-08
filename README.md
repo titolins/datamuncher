@@ -27,7 +27,7 @@ dm = DataMuncher()
 
 * If a filename or pandas.DataFrame was passed to the constructor, it can be later acessed by `dm.df`.
 
-* The second parameter to the constructor is a map containing the header names as keys and the new values as values. Eg.:
+* The second parameter to the constructor is a map containing the header names as keys and the translation as values. Eg.:
 ```
 pd.read_csv('example_data.csv').head()
    ID    Gender  CelPhoneNumber HouseAddress

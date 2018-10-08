@@ -33,7 +33,7 @@ class DataMuncher(object):
             # create an array to keep notice of which columns are not in the
             # translation dict
             drop_cols = []
-            for c in data.columns:
+            for c in self.df.columns:
                 if c not in columns_name_map.keys():
                     drop_cols.append(c)
             # if there are missing columns in the dictionary, we just drop them

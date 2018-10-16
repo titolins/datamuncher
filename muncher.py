@@ -5,7 +5,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class DataMuncher(object):
-    def __init__(self, df = None, columns_name_map = None):
+    def __init__(self,
+                 df = None,
+                 columns_name_map = None,
+                 sep = ',',
+                 decimal = b'.'):
         '''
         Constructor for DataMuncher class objects.
         Args
@@ -14,6 +18,8 @@ class DataMuncher(object):
                 dataframe.
             columns_name_map (dict[string]: string) - translation dictionary
                 for data's column names.
+            sep (string) - separator character to be passed to pd.read_csv
+            decimal (byte string) - decimal character also for pd.read_csv
         '''
         # if df is None, we simply initialize an empty DataFrame
         if df is None:
@@ -21,7 +27,7 @@ class DataMuncher(object):
         # for strings, we try to initialize an empty dataframe with the
         # indicated file's data
         elif type(df) == str:
-            self.df = pd.read_csv(df)
+            self.df = pd.read_csv(df, sep = sep, decimal = decimal)
         # if it's a data frame, we just assign it
         elif type(df) == pd.DataFrame:
             self.df = df
@@ -30,18 +36,21 @@ class DataMuncher(object):
             raise ValueError("df should either be a str or pd.DataFrame")
         # columns translation. if no dict is passed, we do nothing
         if columns_name_map is not None:
-            # create an array to keep notice of which columns are not in the
-            # translation dict
-            drop_cols = []
-            for c in self.df.columns:
-                if c not in columns_name_map.keys():
-                    drop_cols.append(c)
-            # if there are missing columns in the dictionary, we just drop them
-            if len(drop_cols) > 0:
-                self.df = self.df.drop(columns = drop_cols)
-            # then apply the translation
-            self.df.columns = [
-                columns_name_map[c] for c in self.df.columns]
+            self.df = self.parse_cols(columns_name_map).df
+
+    def parse_cols(self, cols_map, df = None):
+        if df is None:
+            df = self.df.copy(deep=True)
+        drop_cols = []
+        for c in df.columns:
+            if c not in cols_map.keys():
+                drop_cols.append(c)
+        # if there are missing columns in the dictionary, we just drop them
+        if len(drop_cols) > 0:
+            df = df.drop(columns = drop_cols)
+        # then apply the translation
+        df.columns = [cols_map[c] for c in df.columns]
+        return DataMuncher(df = df)
 
     def standardize(self, label, df = None):
         '''

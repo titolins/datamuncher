@@ -118,7 +118,8 @@ dm.plot_all_x_y('age', 4, 'scatter')
 ```
 
 ## TODO's
-* implement one hot encoding
+* implement one hot encoding / dummifying
+* implement auto conversion of object types to numeric
 
 #### Author
 Tito Lins</br>

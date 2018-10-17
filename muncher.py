@@ -129,7 +129,7 @@ class DataMuncher(object):
         df.columns = [cols_map[c] for c in df.columns]
         return DataMuncher(df = df)
 
-    def standardize(self, label, df = None):
+    def standardize(self, labels, df = None):
         '''
         standardizes a series with name ``label`` within the pd.DataFrame
         ``df``.
@@ -137,7 +137,7 @@ class DataMuncher(object):
         https://github.com/pandas-dev/pandas/issues/18028
         Args
         ----
-            label (string) - label of column to be standardized
+            labels (list(string)) - labels of columns to be standardized
             df (pd.DataFrame) - if not to use dm own's initialized df
         Returns
         ----
@@ -146,12 +146,28 @@ class DataMuncher(object):
         '''
         if df is None:
             df = self.df.copy(deep=True)
-        series = df.loc[:, label]
-        avg = series.mean()
-        stdv = series.std()
-        series_standardized = (series - avg) / stdv
-        df[label] = series_standardized
+        for l in labels:
+            series = df.loc[:, l]
+            if np.issubdtype(series.dtype, np.number):
+                avg = series.mean()
+                stdv = series.std()
+                series_standardized = (series - avg) / stdv
+                df[l] = series_standardized
+            else:
+                print("WARNING: Column '{}' not numeric, skipping".format(l))
         return DataMuncher(df = df)
+
+    def standardize_all(self, df = None):
+        '''
+        standardizes all of the dataframe's columns
+
+        Args
+        ----
+            df (pd.DataFrame) - Dataframe to be used if not it's own.
+        '''
+        if df is None:
+            df = self.df.copy(deep=True)
+        return self.standardize(df.columns, df = df)
 
     def plot_all_x_y(self, dep, n_cols, kind, df = None):
         '''

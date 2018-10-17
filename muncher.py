@@ -10,6 +10,7 @@ class DataMuncher(object):
                  df = None,
                  columns_name_map = None,
                  auto_parse_cols = False,
+                 drop_cols = None,
                  sep = ',',
                  decimal = b'.'):
         '''
@@ -43,6 +44,8 @@ class DataMuncher(object):
         # else, if ``columns_name_map`` is passed, we apply it's translation
         elif columns_name_map is not None:
             self.df = self.parse_cols(columns_name_map).df
+        if drop_cols is not None:
+            self.df = self.df.drop(columns = drop_cols)
 
     def _parse_string(self, s):
         '''
@@ -87,6 +90,20 @@ class DataMuncher(object):
             df = self.df.copy(deep=True)
         df.columns = [self._parse_string(c) for c in df.columns]
         return DataMuncher(df = df)
+
+    def drop_cols(self, cols, df = None):
+        '''
+        Simple drop columns method.
+
+        Args
+        ----
+            cols (list(str)) - labels of the columns to be dropped
+        '''
+        if df is None:
+            df = self.df.copy(deep=True)
+        if len(cols) < 1:
+            raise ValueError('You should indicate at least one column')
+        return DataMuncher(df = df.drop(columns = cols))
 
     def parse_cols(self, cols_map, df = None):
         '''

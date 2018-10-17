@@ -3,11 +3,13 @@ import math
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import re
 
 class DataMuncher(object):
     def __init__(self,
                  df = None,
                  columns_name_map = None,
+                 auto_parse_cols = False,
                  sep = ',',
                  decimal = b'.'):
         '''
@@ -34,9 +36,55 @@ class DataMuncher(object):
         # else, value error
         else:
             raise ValueError("df should either be a str or pd.DataFrame")
-        # columns translation. if no dict is passed, we do nothing
-        if columns_name_map is not None:
+        # columns translation
+        # if ``auto_parse_cols`` is True, we run ``auto_parse_cols``
+        if auto_parse_cols == True:
+            self.df = self.auto_parse_cols_names().df
+        # else, if ``columns_name_map`` is passed, we apply it's translation
+        elif columns_name_map is not None:
             self.df = self.parse_cols(columns_name_map).df
+
+    def _parse_string(self, s):
+        '''
+        Method for simple parsing of strings. Should be used with caution.
+        It basically splits the string by anything that's not a regular
+        character or number. Then it checks if the first character in the
+        string is a number, and if it is, adds an 'x'.
+        Args
+        -----
+            s (string) - string to be parsed
+        '''
+        # if we have an empty string, it should be filled with 'NA'
+        if len(s) < 1:
+            return 'NA'
+        parsed_s = '_'.join([w.lower() for w in re.split('[^A-Za-z0-9 ]',
+                                                             s)])
+        # then we check to see if the first character is a number.
+        # if it is, we should put an x in front of it
+        try:
+            int(parsed_s[0])
+            parsed_s = 'x' + parsed_s
+        # if it isn't, though, we should keep it as it is
+        # except clause exists here for the sole intention of making it explicit that
+        # is our intention to capture specifically the valueerror nd ignore it
+        except ValueError:
+            pass
+        return parsed_s
+
+    def auto_parse_cols_names(self, df = None):
+        '''
+        Tries to auto parse the columns names instead of using the
+        ``cols_names_map`` argument passed to the constructor. Should be used
+        with caution. Uses the ``_parse_string`` method internally.
+
+        Args
+        -----
+            df (pd.DataFrame) - if not to use dm own's initialized df
+        '''
+        if df is None:
+            df = self.df.copy(deep=True)
+        df.columns = [self._parse_string(c) for c in df.columns]
+        return DataMuncher(df = df)
 
     def parse_cols(self, cols_map, df = None):
         if df is None:
@@ -54,8 +102,8 @@ class DataMuncher(object):
 
     def standardize(self, label, df = None):
         '''
-        standardizes a series with name ``label'' within the pd.DataFrame
-        ``df''.
+        standardizes a series with name ``label`` within the pd.DataFrame
+        ``df``.
         taken from:
         https://github.com/pandas-dev/pandas/issues/18028
         Args

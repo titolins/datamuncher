@@ -57,8 +57,9 @@ class DataMuncher(object):
         # if we have an empty string, it should be filled with 'NA'
         if len(s) < 1:
             return 'NA'
-        parsed_s = '_'.join([w.lower() for w in re.split('[^A-Za-z0-9 ]',
-                                                             s)])
+        parsed_s = '_'.join([w2 for w2 in
+                             [w.lower() for w in re.split('[^A-Za-z0-9]', s)]
+                             if len(w2) >= 1])
         # then we check to see if the first character is a number.
         # if it is, we should put an x in front of it
         try:

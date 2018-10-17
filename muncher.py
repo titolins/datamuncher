@@ -65,8 +65,9 @@ class DataMuncher(object):
             int(parsed_s[0])
             parsed_s = 'x' + parsed_s
         # if it isn't, though, we should keep it as it is
-        # except clause exists here for the sole intention of making it explicit that
-        # is our intention to capture specifically the valueerror nd ignore it
+        # except clause exists here for the sole intention of making it
+        # explicit that is our intention to capture specifically the
+        # ``ValueError`` and ignore it
         except ValueError:
             pass
         return parsed_s
@@ -87,6 +88,16 @@ class DataMuncher(object):
         return DataMuncher(df = df)
 
     def parse_cols(self, cols_map, df = None):
+        '''
+        Applies the ``cols_map`` translation passed to the constructor
+
+        Args
+        ----
+            cols_map (dict) - Dictionary containing cols names and translation
+                values.
+            df (pd.DataFrame) - DataFrame, if not to use it's own
+
+        '''
         if df is None:
             df = self.df.copy(deep=True)
         drop_cols = []
@@ -126,7 +137,9 @@ class DataMuncher(object):
 
     def plot_all_x_y(self, dep, n_cols, kind, df = None):
         '''
-        Method for plotting all independent variables vs the dependent one at once
+        Method for plotting all independent variables vs the dependent one at
+        once.
+
         Args
         ----
             df (pd.DataFrame) - respective dataframe. Passing it as an
@@ -226,6 +239,7 @@ class DataMuncher(object):
         '''
         Add column to df with integers for the target.
         http://chrisstrelioff.ws/sandbox/2015/06/08/decision_trees_in_python_with_scikit_learn_and_pandas.html
+
         Args
         ----
         df - pandas DataFrame.

@@ -7,6 +7,7 @@ import numpy as np
 from scipy import stats
 
 from sklearn import tree
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     explained_variance_score,
@@ -59,7 +60,7 @@ class DataMuncher(object):
         if drop_cols is not None:
             self.df = self.df.drop(columns = drop_cols)
 
-    def _parse_string(self, s):
+    def parse_string_(self, s):
         '''
         Method for simple parsing of strings. Should be used with caution.
         It basically splits the string by anything that's not a regular
@@ -92,7 +93,7 @@ class DataMuncher(object):
         '''
         Tries to auto parse the columns names instead of using the
         ``cols_names_map`` argument passed to the constructor. Should be used
-        with caution. Uses the ``_parse_string`` method internally.
+        with caution. Uses the ``parse_string_`` method internally.
 
         Args
         -----
@@ -100,7 +101,7 @@ class DataMuncher(object):
         '''
         if df is None:
             df = self.df.copy(deep=True)
-        df.columns = [self._parse_string(c) for c in df.columns]
+        df.columns = [self.parse_string_(c) for c in df.columns]
         return DataMuncher(df = df)
 
     def drop_cols(self, cols, df = None):

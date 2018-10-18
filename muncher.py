@@ -425,6 +425,28 @@ class DataMuncher(object):
                    ]
         }
 
+    def remove_outliers_iqr(self, df = None):
+        '''
+        Removes the outliers by means of iqr.
+
+        Args
+        ----
+            df (pd.DataFrame) - Dataframe to use if not self's one.
+
+        Returns
+        ----
+            DataMuncher with removed outliers
+        '''
+        if df is None:
+            df = self.df.copy(deep = True)
+        q1 = df.quantile(.25)
+        q3 = df.quantile(.75)
+        iqr = q3 - q1
+        return DataMuncher(
+            df = df[~ ((df < (q1 - 1.5 * iqr)) |
+                       (df > (q3 + 1.5 * iqr))).any(axis=1)]
+        )
+
     def remove_outliers_z_score(self, df = None, threshold = 3.0):
         '''
         Simply remove outliers above the established z_score threshold from

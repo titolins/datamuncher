@@ -518,7 +518,7 @@ class DataMuncher(object):
         print()
 
     def reg_dt(self, dep, test_size = .33, seed = 123, df = None,
-               test_set = None):
+               test_set = None, metrics = [r2_score]):
         '''
         Runs a regression decision tree on the given dataset. If no test_set is
         passed, we simply split the data and print the metrics. If there is a
@@ -545,29 +545,14 @@ class DataMuncher(object):
         clf = tree.DecisionTreeRegressor()
         clf = clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
-        print()
-        print('Printing stats for the Decision Tree Regressor')
-        print('=================================================')
-        print()
+        metrics.extend([explained_variance_score, mean_absolute_error,
+                        mean_squared_error, mean_squared_log_error,
+                        median_absolute_error])
+        self.get_metrics_('Decision Tree Regressor', metrics, (y_test, y_pred))
         print('Feature importances')
         print('-------------------------------------------------')
         for c, f in zip(X_train, clf.feature_importances_):
             print('{}: {}'.format(c, f))
-        print()
-        print('Metrics')
-        print('-------------------------------------------------')
-        print('R-squared (R2): {}'.format(
-            r2_score(y_test, y_pred)))
-        print('Explained variance score: {}'.format(
-            explained_variance_score(y_test, y_pred)))
-        print('Mean absolute error (MAE): {}'.format(
-            mean_absolute_error(y_test, y_pred)))
-        print('Mean squared error (MSE): {}'.format(
-            mean_squared_error(y_test, y_pred)))
-        print('Mean squared logarithmic error (MSLE): {}'.format(
-            mean_squared_log_error(y_test, y_pred)))
-        print('Median absolute error: {}'.format(
-            median_absolute_error(y_test, y_pred)))
 
         #return pd.DataFrame({dep: y_test, pred: y_pred})
         #return (y_test, y_pred)

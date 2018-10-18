@@ -415,9 +415,22 @@ class DataMuncher(object):
                    ]
         }
 
-    def remove_outliers_z_score(self, df = None, threshold = 3):
-        if df is None:
-            df = self.df.copy(deep = True)
+    def remove_outliers_z_score(self, df = None, threshold = 3.0):
+        '''
+        Simply remove outliers above the established z_score threshold from
+        every column. Raises ValueError if there are na values within the
+        dataframe. We do this because if we don't deal with na values before
+        this, it just returns an empty dataframe.
+
+        Args
+        ----
+            df (pd.DataFrame) - Dataframe to use, if not it's own
+            threshold (float) - z_score threshold above and below which
+                outliers should be removed
+        Returns
+        ----
+            DataMuncher
+        '''
         for na in df.isna().any():
             if na == True:
                 raise ValueError("You should first deal with na values")

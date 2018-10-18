@@ -19,12 +19,8 @@ from sklearn.metrics import (
 
 
 class DataMuncher(object):
-    def __init__(self,
-                 df = None,
-                 columns_name_map = None,
-                 auto_parse_cols = False,
-                 drop_cols = None,
-                 sep = ',',
+    def __init__(self, df = None, columns_name_map = None,
+                 auto_parse_cols = False, drop_cols = None, sep = ',',
                  decimal = b'.'):
         '''
         Constructor for DataMuncher class objects.
@@ -521,11 +517,7 @@ class DataMuncher(object):
             print('{}: {}'.format(m.__name__, m(ys[0], ys[1])))
         print()
 
-    def reg_dt(self,
-               dep,
-               test_size = .33,
-               seed = 123,
-               df = None,
+    def reg_dt(self, dep, test_size = .33, seed = 123, df = None,
                test_set = None):
         '''
         Runs a regression decision tree on the given dataset. If no test_set is

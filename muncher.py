@@ -6,6 +6,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
+from sklearn import tree
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import (
+    explained_variance_score,
+    mean_absolute_error,
+    mean_squared_error,
+    mean_squared_log_error,
+    median_absolute_error,
+    r2_score)
+
 
 class DataMuncher(object):
     def __init__(self,
@@ -457,4 +467,66 @@ class DataMuncher(object):
         for l in labels:
             df[l] = df[l].fillna(df[l].mean())
         return DataMuncher(df = df)
+
+    def reg_dt(self,
+               dep,
+               test_size = .33,
+               seed = 123,
+               df = None,
+               test_set = None):
+        '''
+        Runs a regression decision tree on the given dataset. If no test_set is
+        passed, we simply split the data and print the metrics. If there is a
+        test_set though, we print the metrics and return the predictions.
+
+        Args
+        ----
+            dep (string) - dependent variable we are trying to predict.
+            test_size (float) - size of the test set to be created from the df.
+            seed (int) - seed for the random number generator.
+            df (pd.DataFrame) - dataframe to be used if not it's own.
+            test_set (pd.DataFrame) - test_set to predict.
+
+        Returns
+        ----
+            numpy.ndarray containing the predictions to the test_set
+        '''
+        if df is None:
+            df = self.df.copy(deep = True)
+        X_train, X_test, y_train, y_test = train_test_split(
+            df[[c for c in df.columns if c != dep]],
+            df[dep],
+            test_size = test_size,
+            random_state = seed)
+        clf = tree.DecisionTreeRegressor()
+        clf = clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        print()
+        print('Printing stats for the Decision Tree Regressor')
+        print('=================================================')
+        print()
+        print('Feature importances')
+        print('-------------------------------------------------')
+        for c, f in zip(X_train, clf.feature_importances_):
+            print('{}: {}'.format(c, f))
+        print()
+        print('Metrics')
+        print('-------------------------------------------------')
+        print('R-squared (R2): {}'.format(
+            r2_score(y_test, y_pred)))
+        print('Explained variance score: {}'.format(
+            explained_variance_score(y_test, y_pred)))
+        print('Mean absolute error (MAE): {}'.format(
+            mean_absolute_error(y_test, y_pred)))
+        print('Mean squared error (MSE): {}'.format(
+            mean_squared_error(y_test, y_pred)))
+        print('Mean squared logarithmic error (MSLE): {}'.format(
+            mean_squared_log_error(y_test, y_pred)))
+        print('Median absolute error: {}'.format(
+            median_absolute_error(y_test, y_pred)))
+
+        #return pd.DataFrame({dep: y_test, pred: y_pred})
+        #return (y_test, y_pred)
+        if test_set is not None:
+            return clf.predict(test_set[[c for c in test_set if c != dep]])
 

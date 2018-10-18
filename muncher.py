@@ -431,6 +431,8 @@ class DataMuncher(object):
         ----
             DataMuncher
         '''
+        if df is None:
+            df = self.df.copy(deep = True)
         for na in df.isna().any():
             if na == True:
                 raise ValueError("You should first deal with na values")

@@ -1,9 +1,11 @@
 import math
+import re
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import re
+from scipy import stats
+
 
 class DataMuncher(object):
     def __init__(self,
@@ -367,4 +369,58 @@ class DataMuncher(object):
                         kind = 'density',
                         df = self.encode_all_simple(df = df).df)
 
+    def get_outliers_z_score(self, threshold = 3.0, df = None):
+        '''
+        Method for getting the outliers of the entire dataframe. It should be
+        noted, however, that if using our ``standardize`` implementation, you
+        will already have the z-scores, so this may be redundant.
+
+        Args
+        ----
+            threshold (float) - z-score threshold for defining outliers
+            df (pd.DataFrame) - Dataframe to apply to, if not using it's own
+
+        Returns
+        ----
+            dictionary (col_name: list(int)) - dictionary with column names as
+                keys and a list of integers indicating the indexes of the
+                outliers.
+
+        '''
+        if df is None:
+            df = self.df.copy(deep = True)
+        '''
+        # get non numeric columns
+        non_numeric_cols = [
+            c for c in dm.df.columns if not np.issubdtype(dm.df[c], np.number)
+        ]
+        # then we create a dictionary with the column names as keys, and a list
+        # as values containing the indexes of the outlier values
+        z_dict = {
+            c: [ i for i in range(0, len(df[c]))
+                    if np.abs(stats.zscore(df[c]))[i] >= threshold ]
+               for c in df.columns if c not in non_numeric_cols
+        }
+        return z_dict
+        '''
+        # just a one liner now :D
+        # keeping the original above for ease of understanding
+        return {
+            c: [ i for i in range(0, len(df[c]))
+                     if np.abs(stats.zscore(df[c]))[i] >= threshold ]
+               for c in df.columns if c not in
+                   [
+                       c for c in df.columns if not np.issubdtype(df[c],
+                                                                  np.number)
+                   ]
+        }
+
+    def remove_outliers_z_score(self, df = None, threshold = 3):
+        if df is None:
+            df = self.df.copy(deep = True)
+        for na in df.isna().any():
+            if na == True:
+                raise ValueError("You should first deal with na values")
+        return DataMuncher(
+            df = df[(np.abs(stats.zscore(df)) < threshold).all(axis=1)])
 

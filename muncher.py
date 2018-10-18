@@ -491,6 +491,36 @@ class DataMuncher(object):
             df[l] = df[l].fillna(df[l].mean())
         return DataMuncher(df = df)
 
+    def split_data_(self, df, dep, test_size, seed):
+        '''
+        Helper method to split the train and data sets.
+
+        Args
+        ----
+            df (pd.DataFrame) - the dataframe to be split
+            dep (string) - the dependent variable
+            test_size (float) - the size of the test set
+            seed (int) - the seed for the random number generator
+        '''
+        return train_test_split(
+            df[[c for c in df.columns if c != dep]],
+            df[dep],
+            test_size = test_size,
+            random_state = seed)
+
+    def get_metrics_(self, alg, metrics, ys):
+        '''
+        '''
+        print()
+        print('Printing stats for {}'.format(alg))
+        print('=================================================')
+        print()
+        print('Metrics')
+        print('-------------------------------------------------')
+        for m in metrics:
+            print('{}: {}'.format(m.__name__, m(ys[0], ys[1])))
+        print()
+
     def reg_dt(self,
                dep,
                test_size = .33,
@@ -516,11 +546,10 @@ class DataMuncher(object):
         '''
         if df is None:
             df = self.df.copy(deep = True)
-        X_train, X_test, y_train, y_test = train_test_split(
-            df[[c for c in df.columns if c != dep]],
-            df[dep],
-            test_size = test_size,
-            random_state = seed)
+        X_train, X_test, y_train, y_test = self.split_data_(df,
+                                                            dep,
+                                                            test_size,
+                                                            seed)
         clf = tree.DecisionTreeRegressor()
         clf = clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
@@ -552,4 +581,21 @@ class DataMuncher(object):
         #return (y_test, y_pred)
         if test_set is not None:
             return clf.predict(test_set[[c for c in test_set if c != dep]])
+
+    def linear_reg(self, dep, test_size = .33, seed = 123, df = None,
+                   test_set = None, metrics = [r2_score]):
+        '''
+        '''
+        if df is None:
+            df = self.df.copy(deep = True)
+        X_train, X_test, y_train, y_test = self.split_data_(df,
+                                                            dep,
+                                                            test_size,
+                                                            seed)
+        reg = LinearRegression().fit(X_train, y_train)
+        y_pred = reg.predict(X_test)
+        self.get_metrics_('Linear Regression', metrics, (y_test, y_pred))
+
+        if test_set is not None:
+            return reg.predict(test_set[[c for c in test_set if c != dep]])
 

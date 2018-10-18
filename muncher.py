@@ -439,3 +439,22 @@ class DataMuncher(object):
         return DataMuncher(
             df = df[(np.abs(stats.zscore(df)) < threshold).all(axis=1)])
 
+    def fill_na_mean(self, labels, df = None):
+        '''
+        Fills a given set of columns missing values with the respective means.
+
+        Args
+        ----
+            label (list(string)) - label for the column
+            df (pd.DataFrame) - dataframe to use if not it's own
+
+        Returns
+        ----
+            DataMuncher with updated df
+        '''
+        if df is None:
+            df = self.df.copy(deep = True)
+        for l in labels:
+            df[l] = df[l].fillna(df[l].mean())
+        return DataMuncher(df = df)
+

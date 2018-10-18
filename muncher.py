@@ -7,7 +7,8 @@ import numpy as np
 from scipy import stats
 
 from sklearn import tree, svm
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     explained_variance_score,
@@ -618,4 +619,31 @@ class DataMuncher(object):
 
         if test_set is not None:
             return model.predict(test_set[[c for c in test_set if c != dep]])
+
+    def random_forest_reg(self, dep, test_size = .33, seed = 123, df = None,
+                          test_set = None, metrics = [r2_score]):
+        '''
+        '''
+        if df is None:
+            df = self.df.copy(deep = True)
+        metrics = [r2_score, explained_variance_score, mean_absolute_error,
+                   mean_squared_error, median_absolute_error]
+        model, ys = self.run_model_(RandomForestRegressor, dep, test_size,
+                                    seed, df, metrics)
+
+        if test_set is not None:
+            return model.predict(test_set[[c for c in test_set if c != dep]])
+
+    def lasso(self, dep, test_size = .33, seed = 123, df = None,
+              test_set = None, metrics = [r2_score]):
+        if df is None:
+            df = self.df.copy(deep = True)
+        metrics = [r2_score, explained_variance_score, mean_absolute_error,
+                   mean_squared_error, median_absolute_error]
+        model, ys = self.run_model_(Lasso, dep, test_size, seed, df, metrics)
+
+        if test_set is not None:
+            return model.predict(test_set[[c for c in test_set if c != dep]])
+
+
 

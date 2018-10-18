@@ -517,6 +517,31 @@ class DataMuncher(object):
             print('{}: {}'.format(m.__name__, m(ys[0], ys[1])))
         print()
 
+    def run_model_(self, m_func, dep, test_size, seed, df, metrics):
+        '''
+        Helper method for runinng different methods.
+        Args
+        ----
+            m_func (function) - the model constructor. The class should have a
+                ``fit`` function, in line with sklearn models.
+            dep (string) - dependent variable we are trying to predict.
+            test_size (float) - size of the test set to be created from the df.
+            seed (int) - seed for the random number generator.
+            df (pd.DataFrame) - dataframe to be used if not it's own.
+            metrics (list(function)) - list with metric functions
+
+        Returns
+        ----
+            (model, ys) ((sklearn model) tuple(original_y_vals, y_predictions))
+        '''
+        X_train, X_test, y_train, y_test = self.split_data_(df, dep, test_size,
+                                                            seed)
+        model = m_func().fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        ys = (y_test, y_pred)
+        self.get_metrics_(m_func.__name__, metrics, ys)
+        return (model, ys)
+
     def reg_dt(self, dep, test_size = .33, seed = 123, df = None,
                test_set = None, metrics = [r2_score]):
         '''
@@ -531,6 +556,7 @@ class DataMuncher(object):
             seed (int) - seed for the random number generator.
             df (pd.DataFrame) - dataframe to be used if not it's own.
             test_set (pd.DataFrame) - test_set to predict.
+            metrics (list(function)) - list with metric functions
 
         Returns
         ----
@@ -538,41 +564,45 @@ class DataMuncher(object):
         '''
         if df is None:
             df = self.df.copy(deep = True)
-        X_train, X_test, y_train, y_test = self.split_data_(df,
-                                                            dep,
-                                                            test_size,
-                                                            seed)
-        clf = tree.DecisionTreeRegressor()
-        clf = clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
         metrics.extend([explained_variance_score, mean_absolute_error,
                         mean_squared_error, mean_squared_log_error,
                         median_absolute_error])
-        self.get_metrics_('Decision Tree Regressor', metrics, (y_test, y_pred))
+        model, ys = self.run_model_(tree.DecisionTreeRegressor, dep, test_size,
+                                    seed, df, metrics)
         print('Feature importances')
         print('-------------------------------------------------')
-        for c, f in zip(X_train, clf.feature_importances_):
+        for c, f in zip(df.columns, model.feature_importances_):
             print('{}: {}'.format(c, f))
 
-        #return pd.DataFrame({dep: y_test, pred: y_pred})
-        #return (y_test, y_pred)
         if test_set is not None:
-            return clf.predict(test_set[[c for c in test_set if c != dep]])
+            return model.predict(test_set[[c for c in test_set if c != dep]])
 
     def linear_reg(self, dep, test_size = .33, seed = 123, df = None,
                    test_set = None, metrics = [r2_score]):
         '''
+        Runs a linear regression on the given dataset. If no test_set is
+        passed, we simply split the data and print the metrics. If there is a
+        test_set though, we print the metrics and return the predictions.
+
+        Args
+        ----
+            dep (string) - dependent variable we are trying to predict.
+            test_size (float) - size of the test set to be created from the df.
+            seed (int) - seed for the random number generator.
+            df (pd.DataFrame) - dataframe to be used if not it's own.
+            test_set (pd.DataFrame) - test_set to predict.
+            metrics (list(function)) - list with metric functions
+
+        Returns
+        ----
+            numpy.ndarray containing the predictions to the test_set
         '''
         if df is None:
             df = self.df.copy(deep = True)
-        X_train, X_test, y_train, y_test = self.split_data_(df,
-                                                            dep,
-                                                            test_size,
-                                                            seed)
-        reg = LinearRegression().fit(X_train, y_train)
-        y_pred = reg.predict(X_test)
-        self.get_metrics_('Linear Regression', metrics, (y_test, y_pred))
-
+        metrics.extend([explained_variance_score, mean_absolute_error,
+                        mean_squared_error, median_absolute_error])
+        model, ys = self.run_model_(LinearRegression, dep, test_size, seed, df,
+                                    metrics)
         if test_set is not None:
-            return reg.predict(test_set[[c for c in test_set if c != dep]])
+            return model.predict(test_set[[c for c in test_set if c != dep]])
 

@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 
-from sklearn import tree
+from sklearn import tree, svm
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
@@ -564,9 +564,9 @@ class DataMuncher(object):
         '''
         if df is None:
             df = self.df.copy(deep = True)
-        metrics.extend([explained_variance_score, mean_absolute_error,
-                        mean_squared_error, mean_squared_log_error,
-                        median_absolute_error])
+        metrics = [r2_score, explained_variance_score, mean_absolute_error,
+                   mean_squared_error, mean_squared_log_error,
+                   median_absolute_error]
         model, ys = self.run_model_(tree.DecisionTreeRegressor, dep, test_size,
                                     seed, df, metrics)
         print('Feature importances')
@@ -599,10 +599,23 @@ class DataMuncher(object):
         '''
         if df is None:
             df = self.df.copy(deep = True)
-        metrics.extend([explained_variance_score, mean_absolute_error,
-                        mean_squared_error, median_absolute_error])
+        metrics = [r2_square, explained_variance_score, mean_absolute_error,
+                   mean_squared_error, median_absolute_error]
         model, ys = self.run_model_(LinearRegression, dep, test_size, seed, df,
                                     metrics)
+        if test_set is not None:
+            return model.predict(test_set[[c for c in test_set if c != dep]])
+
+    def svr(self, dep, test_size = .33, seed = 123, df = None, test_set = None,
+            metrics = [r2_score]):
+        '''
+        '''
+        if df is None:
+            df = self.df.copy(deep = True)
+        metrics = [r2_score, explained_variance_score, mean_absolute_error,
+                   mean_squared_error, median_absolute_error]
+        model, ys = self.run_model_(svm.SVR, dep, test_size, seed, df, metrics)
+
         if test_set is not None:
             return model.predict(test_set[[c for c in test_set if c != dep]])
 

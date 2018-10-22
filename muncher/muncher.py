@@ -10,7 +10,7 @@ from sklearn import tree, svm
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression, Lasso
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.metrics import (
     explained_variance_score,
     mean_absolute_error,
@@ -21,15 +21,15 @@ from sklearn.metrics import (
 DEFAULT_METRICS = ( r2_score, explained_variance_score,
                     mean_absolute_error, mean_squared_error,
                     median_absolute_error )
-SUPPORTED_ALGS = {
-    'knn_regressor': KNeighborsRegressor,
-    'gbt_regressor': GradientBoostingRegressor,
-    'lasso2': Lasso,
-    'random_forest_regressor': RandomForestRegressor,
-    'support_vector_regressor': svm.SVR,
-    'linear_regression': LinearRegression,
-    'decision_tree_regressor': tree.DecisionTreeRegressor
-}
+SUPPORTED_ALGS = [
+    ('knn_regressor', KNeighborsRegressor),
+    ('gbt_regressor', GradientBoostingRegressor),
+    ('lasso2', Lasso),
+    ('random_forest_regressor', RandomForestRegressor),
+    ('support_vector_regressor', svm.SVR),
+    ('linear_regression', LinearRegression),
+    ('decision_tree_regressor', tree.DecisionTreeRegressor)
+]
 
 class MetaMuncher(type):
     def __init__(self, name, bases, d):
@@ -38,8 +38,7 @@ class MetaMuncher(type):
             def model_method(self, dep, test_size = .33, seed = 123, df = None,
                              test_set = None, metrics = DEFAULT_METRICS,
                              **kwargs):
-                if df is None:
-                    df = self.df.copy(deep = True)
+                df = self._get_df(df)
                 model, ys = self._run_model(alg_func, dep, test_size, seed, df,
                                             metrics, **kwargs)
                 if test_set is not None:
@@ -52,7 +51,7 @@ class MetaMuncher(type):
                     return test_set
             return model_method
 
-        for alg_name, alg_func in SUPPORTED_ALGS.items():
+        for alg_name, alg_func in SUPPORTED_ALGS:
             setattr(self, alg_name, alg_wrapper(alg_func))
 
 class DataMuncher(object, metaclass = MetaMuncher):
@@ -93,6 +92,11 @@ class DataMuncher(object, metaclass = MetaMuncher):
         if drop_cols is not None:
             self.df = self.df.drop(columns = drop_cols)
 
+    def _get_df(self, df):
+        '''
+        '''
+        return df if df is not None else self.df.copy(deep = True)
+
     def parse_string_(self, s):
         '''
         Method for simple parsing of strings. Should be used with caution.
@@ -132,8 +136,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         -----
             df (pd.DataFrame) - if not to use dm own's initialized df
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         df.columns = [self.parse_string_(c) for c in df.columns]
         return DataMuncher(df = df)
 
@@ -145,8 +148,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ----
             cols (list(str)) - labels of the columns to be dropped
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         if len(cols) < 1:
             raise ValueError('You should indicate at least one column')
         return DataMuncher(df = df.drop(columns = cols))
@@ -162,8 +164,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             df (pd.DataFrame) - DataFrame, if not to use it's own
 
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         drop_cols = []
         for c in df.columns:
             if c not in cols_map.keys():
@@ -190,8 +191,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             new DataMuncher with standardized pd.Series relative to the label's
             column
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         for l in labels:
             series = df.loc[:, l]
             if np.issubdtype(series.dtype, np.number):
@@ -211,8 +211,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ----
             df (pd.DataFrame) - Dataframe to be used if not it's own.
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         return self.standardize(df.columns, df = df)
 
     def plot_all_x_y(self, dep, n_cols, kind, df = None):
@@ -230,8 +229,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             n_cols (int) - number of columns in the plot
             kind (string) - kind of plot to be passed into pd.DataFrame.plot()
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         # number of rows should be the total number of columns divided by the
         # number of columns plotted by row (passed by the n_cols parameter)
         # we subtract one because we're not plotting 'dep ~ dep'
@@ -265,8 +263,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             df (pandas.DataFrame) - if using a df that's not the one dm got
                 instantiated with.
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         if ax is None:
             df[[x,y]].plot(x = x,
                            y = y,
@@ -292,8 +289,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             n_cols (int) - number of columns in the plot
             kind (string) - kind of plot to be passed into pd.DataFrame.plot()
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         len_data = len(df.columns)
         n_rows = math.ceil(len_data/n_cols)
         _, axs = plt.subplots(n_rows, n_cols)
@@ -307,8 +303,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         plt.show()
 
     def plot_one_x(self, x, kind, ax = None, df = None):
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         if ax is not None:
             df[[x]].plot(kind = kind, ax = ax)
         else:
@@ -329,8 +324,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ----
         new DataMuncher, with respective dataframe with encoded target col
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         targets = df[target_column].unique()
         map_to_int = {name: n for n, name in enumerate(targets)}
         df[target_column] = df[target_column].replace(map_to_int)
@@ -347,8 +341,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ----
             DataMuncher - so we chain methods! Yay
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         # iterate cols and cols_types
         for c, c_type in df.dtypes.to_dict().items():
             # check it if it's a numpy object type
@@ -366,8 +359,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             n_cols (int) - number of columns to divide the plot area into.
             df (pd.DataFrame) - if using another dataframe.
         '''
-        if df is None:
-            df = self.df.copy(deep=True)
+        df = self._get_df(df)
         self.encode_all_simple(df = df).plot_all_x(n_cols, kind, df = df)
 
     def plot_scatter_dep_simple_encode(self, dependent, n_cols = 4, df = None):
@@ -378,8 +370,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             dependent (string) - name of the dependent variable to plot against
             n_cols (int) - number of columns to be plotted in the chart area.
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         self.plot_all_x_y(dependent,
                           n_cols,
                           'scatter',
@@ -393,8 +384,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             n_cols (int) - number of columns to divide plot area into
             df (pd.DataFrame) - if using dm as a parser to other df
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         self.plot_all_x(n_cols,
                         kind = 'box',
                         df = self.encode_all_simple(df = df).df)
@@ -407,8 +397,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             n_cols (int) - number of columns to divide plot area into
             df (pd.DataFrame) - if using dm as a parser to other df
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         self.plot_all_x(n_cols,
                         kind = 'density',
                         df = self.encode_all_simple(df = df).df)
@@ -431,24 +420,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
                 outliers.
 
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        '''
-        # get non numeric columns
-        non_numeric_cols = [
-            c for c in dm.df.columns if not np.issubdtype(dm.df[c], np.number)
-        ]
-        # then we create a dictionary with the column names as keys, and a list
-        # as values containing the indexes of the outlier values
-        z_dict = {
-            c: [ i for i in range(0, len(df[c]))
-                    if np.abs(stats.zscore(df[c]))[i] >= threshold ]
-               for c in df.columns if c not in non_numeric_cols
-        }
-        return z_dict
-        '''
-        # just a one liner now :D
-        # keeping the original above for ease of understanding
+        df = self._get_df(df)
         return {
             c: [ i for i in range(0, len(df[c]))
                      if np.abs(stats.zscore(df[c]))[i] >= threshold ]
@@ -471,8 +443,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ----
             DataMuncher with removed outliers
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         q1 = df.quantile(.25)
         q3 = df.quantile(.75)
         iqr = q3 - q1
@@ -497,13 +468,17 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ----
             DataMuncher
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         for na in df.isna().any():
             if na == True:
                 raise ValueError("You should first deal with na values")
         return DataMuncher(
             df = df[(np.abs(stats.zscore(df)) < threshold).all(axis=1)])
+
+    def _fill_na(self, df, col, replace_by):
+        '''
+        '''
+        return df[col].fillna(getattr(df[col], replace_by)())
 
     def fill_na_mean(self, labels, df = None):
         '''
@@ -518,10 +493,17 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ----
             DataMuncher with updated df
         '''
-        if df is None:
-            df = self.df.copy(deep = True)
+        df = self._get_df(df)
         for l in labels:
-            df[l] = df[l].fillna(df[l].mean())
+            df[l] = self._fill_na(df, l, 'mean')
+        return DataMuncher(df = df)
+
+    def fill_na_median(self, labels, df = None):
+        '''
+        '''
+        df = self._get_df(df)
+        for l in lavels:
+            df[l] = self._fill_na(df, l, 'median')
         return DataMuncher(df = df)
 
     def split_data_(self, df, dep, test_size, seed):
@@ -594,5 +576,30 @@ class DataMuncher(object, metaclass = MetaMuncher):
         ys = (y_test, y_pred)
         self._get_metrics(m_func.__name__, metrics, ys)
         return (model, ys)
+
+    def compare_algs(self, dep, df = None):
+        '''
+        '''
+        df = self._get_df(df)
+        X, y = df[[c for c in df.columns if c != dep]], df[dep]
+        scoring = 'r2'
+        results = []
+        names = []
+        print('start loop')
+        for name, model in SUPPORTED_ALGS:
+            kf = KFold(n_splits = 10, random_state = 123)
+            cv_results = cross_val_score(model(), X, y, cv=kf, scoring=scoring)
+            results.append(cv_results)
+            names.append(name)
+            print('{}: {} ({})'.
+                  format(name, cv_results.mean(), cv_results.std()))
+
+        # boxplot algorithm comparison
+        fig = plt.figure()
+        fig.suptitle('Algorithm Comparison')
+        ax = fig.add_subplot(111)
+        plt.boxplot(results)
+        ax.set_xticklabels(names)
+        plt.show()
 
 

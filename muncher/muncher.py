@@ -49,6 +49,7 @@ class MetaMuncher(type):
                     # append the preiction results
                     test_set['{}_pred'.format(dep)] = model.predict(test_set)
                     return test_set
+                return (model, ys)
             return model_method
 
         for alg_name, alg_func in SUPPORTED_ALGS:
@@ -502,7 +503,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         '''
         '''
         df = self._get_df(df)
-        for l in lavels:
+        for l in labels:
             df[l] = self._fill_na(df, l, 'median')
         return DataMuncher(df = df)
 

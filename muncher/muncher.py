@@ -34,13 +34,13 @@ SUPPORTED_ALGS = {
 class MetaMuncher(type):
     def __init__(self, name, bases, d):
         x = type.__init__(self, name, bases, d)
-        def model_method_wrapper(alg_func):
+        def alg_wrapper(alg_func):
             def model_method(self, dep, test_size = .33, seed = 123, df = None,
                              test_set = None, metrics = DEFAULT_METRICS,
                              **kwargs):
                 if df is None:
                     df = self.df.copy(deep = True)
-                model, ys = self.run_model_(alg_func, dep, test_size, seed, df,
+                model, ys = self._run_model(alg_func, dep, test_size, seed, df,
                                             metrics, **kwargs)
                 if test_set is not None:
                     # if dep variable in the test set, drop it
@@ -53,8 +53,7 @@ class MetaMuncher(type):
             return model_method
 
         for alg_name, alg_func in SUPPORTED_ALGS.items():
-            print('{}: {}'.format(alg_name,alg_func))
-            setattr(self, alg_name, model_method_wrapper(alg_func))
+            setattr(self, alg_name, alg_wrapper(alg_func))
 
 class DataMuncher(object, metaclass = MetaMuncher):
     def __init__(self, df = None, columns_name_map = None,
@@ -542,7 +541,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             test_size = test_size,
             random_state = seed)
 
-    def get_metrics_(self, alg, metrics, ys):
+    def _get_metrics(self, alg, metrics, ys):
         '''
         '''
         print()
@@ -555,7 +554,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             print('{}: {}'.format(m.__name__, m(ys[0], ys[1])))
         print()
 
-    def run_model_(self, m_func, dep, test_size, seed, df, metrics, **kwargs):
+    def _run_model(self, m_func, dep, test_size, seed, df, metrics, **kwargs):
         '''
         Helper method for runinng different methods.
         Args
@@ -593,7 +592,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
                   format(k, model.score(X_test, y_test)))
         y_pred = model.predict(X_test)
         ys = (y_test, y_pred)
-        self.get_metrics_(m_func.__name__, metrics, ys)
+        self._get_metrics(m_func.__name__, metrics, ys)
         return (model, ys)
 
 

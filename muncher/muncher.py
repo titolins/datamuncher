@@ -21,8 +21,42 @@ from sklearn.metrics import (
 DEFAULT_METRICS = ( r2_score, explained_variance_score,
                     mean_absolute_error, mean_squared_error,
                     median_absolute_error )
+SUPPORTED_ALGS = {
+    'knn_regressor': KNeighborsRegressor,
+    'gbt_regressor': GradientBoostingRegressor,
+    'lasso2': Lasso,
+    'random_forest_regressor': RandomForestRegressor,
+    'support_vector_regressor': svm.SVR,
+    'linear_regression': LinearRegression,
+    'decision_tree_regressor': tree.DecisionTreeRegressor
+}
 
-class DataMuncher(object):
+class MetaMuncher(type):
+    def __init__(self, name, bases, d):
+        x = type.__init__(self, name, bases, d)
+        def model_method_wrapper(alg_func):
+            def model_method(self, dep, test_size = .33, seed = 123, df = None,
+                             test_set = None, metrics = DEFAULT_METRICS,
+                             **kwargs):
+                if df is None:
+                    df = self.df.copy(deep = True)
+                model, ys = self.run_model_(alg_func, dep, test_size, seed, df,
+                                            metrics, **kwargs)
+                if test_set is not None:
+                    # if dep variable in the test set, drop it
+                    if dep in test_set:
+                        test_set = test_set[
+                            [c for c in test_set.columns if c != dep]]
+                    # append the preiction results
+                    test_set['{}_pred'.format(dep)] = model.predict(test_set)
+                    return test_set
+            return model_method
+
+        for alg_name, alg_func in SUPPORTED_ALGS.items():
+            print('{}: {}'.format(alg_name,alg_func))
+            setattr(self, alg_name, model_method_wrapper(alg_func))
+
+class DataMuncher(object, metaclass = MetaMuncher):
     def __init__(self, df = None, columns_name_map = None,
                  auto_parse_cols = False, drop_cols = None, sep = ',',
                  decimal = b'.'):
@@ -561,156 +595,5 @@ class DataMuncher(object):
         ys = (y_test, y_pred)
         self.get_metrics_(m_func.__name__, metrics, ys)
         return (model, ys)
-
-
-    def reg_dt(self, dep, test_size = .33, seed = 123, df = None,
-               test_set = None, metrics = DEFAULT_METRICS, **kwargs):
-        '''
-        Runs a regression decision tree on the given dataset. If no test_set is
-        passed, we simply split the data and print the metrics. If there is a
-        test_set though, we print the metrics and return the predictions.
-
-        Args
-        ----
-            dep (string) - dependent variable we are trying to predict.
-            test_size (float) - size of the test set to be created from the df.
-            seed (int) - seed for the random number generator.
-            df (pd.DataFrame) - dataframe to be used if not it's own.
-            test_set (pd.DataFrame) - test_set to predict.
-            metrics (list(function)) - list with metric functions
-
-        Returns
-        ----
-            numpy.ndarray containing the predictions to the test_set
-        '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        model, ys = self.run_model_(tree.DecisionTreeRegressor, dep, test_size,
-                                    seed, df, metrics, **kwargs)
-        print('Feature importances')
-        print('-------------------------------------------------')
-        for c, f in zip(df.columns, model.feature_importances_):
-            print('{}: {}'.format(c, f))
-        if test_set is not None:
-            # if dep variable in the test set, drop it
-            if dep in test_set:
-                test_set = test_set[[c for c in test_set.columns if c != dep]]
-            # append the preiction results
-            test_set['{}_pred'.format(dep)] = model.predict(test_set)
-            return test_set
-
-    def linear_reg(self, dep, test_size = .33, seed = 123, df = None,
-                   test_set = None, metrics = DEFAULT_METRICS, **kwargs):
-        '''
-        Runs a linear regression on the given dataset. If no test_set is
-        passed, we simply split the data and print the metrics. If there is a
-        test_set though, we print the metrics and return the predictions.
-
-        Args
-        ----
-            dep (string) - dependent variable we are trying to predict.
-            test_size (float) - size of the test set to be created from the df.
-            seed (int) - seed for the random number generator.
-            df (pd.DataFrame) - dataframe to be used if not it's own.
-            test_set (pd.DataFrame) - test_set to predict.
-            metrics (list(function)) - list with metric functions
-
-        Returns
-        ----
-            numpy.ndarray containing the predictions to the test_set
-        '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        model, ys = self.run_model_(LinearRegression, dep, test_size, seed, df,
-                                    metrics, **kwargs)
-        if test_set is not None:
-            # if dep variable in the test set, drop it
-            if dep in test_set:
-                test_set = test_set[[c for c in test_set.columns if c != dep]]
-            # append the preiction results
-            test_set['{}_pred'.format(dep)] = model.predict(test_set)
-            return test_set
-
-    def svr(self, dep, test_size = .33, seed = 123, df = None, test_set = None,
-            metrics = DEFAULT_METRICS, **kwargs):
-        '''
-        '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        model, ys = self.run_model_(svm.SVR, dep, test_size, seed, df, metrics,
-                                    **kwargs)
-        if test_set is not None:
-            # if dep variable in the test set, drop it
-            if dep in test_set:
-                test_set = test_set[[c for c in test_set.columns if c != dep]]
-            # append the preiction results
-            test_set['{}_pred'.format(dep)] = model.predict(test_set)
-            return test_set
-
-    def random_forest_reg(self, dep, test_size = .33, seed = 123, df = None,
-                          test_set = None,
-                          metrics = DEFAULT_METRICS, **kwargs):
-        '''
-        '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        model, ys = self.run_model_(RandomForestRegressor, dep, test_size,
-                                    seed, df, metrics, **kwargs)
-        if test_set is not None:
-            # if dep variable in the test set, drop it
-            if dep in test_set:
-                test_set = test_set[[c for c in test_set.columns if c != dep]]
-            # append the preiction results
-            test_set['{}_pred'.format(dep)] = model.predict(test_set)
-            return test_set
-
-    def lasso(self, dep, test_size = .33, seed = 123, df = None,
-              test_set = None, metrics = DEFAULT_METRICS, **kwargs):
-        '''
-        '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        model, ys = self.run_model_(Lasso, dep, test_size, seed, df, metrics,
-                                    **kwargs)
-        if test_set is not None:
-            # if dep variable in the test set, drop it
-            if dep in test_set:
-                test_set = test_set[[c for c in test_set.columns if c != dep]]
-            # append the preiction results
-            test_set['{}_pred'.format(dep)] = model.predict(test_set)
-            return test_set
-
-    def gbt(self, dep, test_size = .33, seed = 123, df = None, test_set = None,
-            metrics = DEFAULT_METRICS, **kwargs):
-        '''
-        '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        model, ys = self.run_model_(GradientBoostingRegressor, dep, test_size,
-                                    seed, df, metrics, **kwargs)
-        if test_set is not None:
-            # if dep variable in the test set, drop it
-            if dep in test_set:
-                test_set = test_set[[c for c in test_set.columns if c != dep]]
-            # append the preiction results
-            test_set['{}_pred'.format(dep)] = model.predict(test_set)
-            return test_set
-
-    def knn(self, dep, test_size = .33, seed = 123, df = None, test_set = None,
-            metrics = DEFAULT_METRICS, **kwargs):
-        '''
-        '''
-        if df is None:
-            df = self.df.copy(deep = True)
-        model, ys = self.run_model_(KNeighborsRegressor, dep, test_size, seed,
-                                    df, metrics, **kwargs)
-        if test_set is not None:
-            # if dep variable in the test set, drop it
-            if dep in test_set:
-                test_set = test_set[[c for c in test_set.columns if c != dep]]
-            # append the preiction results
-            test_set['{}_pred'.format(dep)] = model.predict(test_set)
-            return test_set
-
 
 

@@ -1,2 +1,2 @@
-from muncher.muncher import DataMuncher
+from .muncher import DataMuncher
 

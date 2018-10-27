@@ -1,3 +1,6 @@
 data/
 tasks/
 __pycache__
+dist/
+build/
+muncher.egg-info/

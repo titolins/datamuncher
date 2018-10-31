@@ -33,6 +33,10 @@ SUPPORTED_ALGS = [
 ]
 
 class MetaMuncher(type):
+    '''
+    Meta class for DataMuncher. It basically adds methods for running each of
+    the algorithms specified in the SUPPORTED_ALGS list
+    '''
     def __init__(self, name, bases, d):
         x = type.__init__(self, name, bases, d)
         def alg_wrapper(alg_func):
@@ -58,8 +62,7 @@ class MetaMuncher(type):
 
 class DataMuncher(object, metaclass = MetaMuncher):
     def __init__(self, df = None, columns_name_map = None,
-                 auto_parse_cols = False, drop_cols = None, sep = ',',
-                 decimal = b'.'):
+                 auto_parse_cols = False, drop_cols = None, **kwargs):
         '''
         Constructor for DataMuncher class objects.
         Args
@@ -77,7 +80,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         # for strings, we try to initialize an empty dataframe with the
         # indicated file's data
         elif type(df) == str:
-            self.df = pd.read_csv(df, sep = sep, decimal = decimal)
+            self.df = pd.read_csv(df, **kwargs)
         # if it's a data frame, we just assign it
         elif type(df) == pd.DataFrame:
             self.df = df

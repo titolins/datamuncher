@@ -10,8 +10,9 @@ from sklearn import tree, svm
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression, Lasso
-from sklearn.model_selection import train_test_split, KFold, cross_val_score
+from sklearn.model_selection import train_test_split, KFold, cross_val_score, cross_validate
 from sklearn.metrics import (
+    make_scorer,
     explained_variance_score,
     mean_absolute_error,
     mean_squared_error,
@@ -583,24 +584,47 @@ class DataMuncher(object, metaclass = MetaMuncher):
         '''
         df = self._get_df(df)
         X, y = df[[c for c in df.columns if c != dep]], df[dep]
-        scoring = 'r2'
+        #scoring = 'r2'
+        scoring = {
+            s.__name__: make_scorer(s) for s in DEFAULT_METRICS
+        }
+
         results = []
         names = []
-        print('start loop')
         for name, model in SUPPORTED_ALGS:
-            kf = KFold(n_splits = 10, random_state = 123)
-            cv_results = cross_val_score(model(), X, y, cv=kf, scoring=scoring)
+            kf = KFold(n_splits = 10, shuffle = True, random_state = 123)
+            #cv_results = cross_val_score(model(), X, y, cv=kf, scoring=scoring)
+            cv_results = cross_validate(model(), X, y, cv=kf, scoring=scoring)
             results.append(cv_results)
             names.append(name)
+            '''
             print('{}: {} ({})'.
                   format(name, cv_results.mean(), cv_results.std()))
-
+            '''
+        for name, result in zip(names, results):
+            print('{}: {}'.format(name, result))
+        print('')
         # boxplot algorithm comparison
+        '''
         fig = plt.figure()
         fig.suptitle('Algorithm Comparison')
         ax = fig.add_subplot(111)
         plt.boxplot(results)
         ax.set_xticklabels(names)
         plt.show()
+        '''
+
+    def get_tree_importance(self, dep, df = None, **kwargs):
+        '''
+        '''
+        df = self._get_df(df)
+        model, _ = self.decision_tree_regressor(dep, **kwargs)
+        print('Printing Tree\'s Feature Importance')
+        print('=================================================')
+        for (name, importance) in sorted(
+                list(zip(df.columns, model.feature_importances_)),
+                key = lambda x: x[1]):
+            print('{}: {}'.format(name, importance))
+        print()
 
 

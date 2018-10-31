@@ -61,8 +61,8 @@ class MetaMuncher(type):
             setattr(self, alg_name, alg_wrapper(alg_func))
 
 class DataMuncher(object, metaclass = MetaMuncher):
-    def __init__(self, df = None, columns_name_map = None,
-                 auto_parse_cols = False, drop_cols = None, **kwargs):
+    def __init__(self, df = None, columns_name_map = None, convert_cols = None,
+                 auto_parse_cols_names = False, drop_cols = None, **kwargs):
         '''
         Constructor for DataMuncher class objects.
         Args
@@ -87,9 +87,15 @@ class DataMuncher(object, metaclass = MetaMuncher):
         # else, value error
         else:
             raise ValueError("df should either be a str or pd.DataFrame")
+        if convert_cols is not None:
+            for c in convert_cols:
+                ''' please pay attention to the coerce errors here
+                we are not dealing with na's
+                '''
+                self.df[c[0]] = getattr(pd,c[1])(self.df[c[0]],errors='coerce')
         # columns translation
         # if ``auto_parse_cols`` is True, we run ``auto_parse_cols``
-        if auto_parse_cols == True:
+        if auto_parse_cols_names == True:
             self.df = self.auto_parse_cols_names().df
         # else, if ``columns_name_map`` is passed, we apply it's translation
         elif columns_name_map is not None:

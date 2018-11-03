@@ -652,6 +652,6 @@ class DataMuncher(object, metaclass = MetaMuncher):
             'savefig.edgecolor'
         ]
         for attr in bg_color_attrs:
-            matplotlib.rcParams[attr] = color
+            plt.rcParams[attr] = color
 
 

@@ -90,7 +90,10 @@ class DataMuncher(object, metaclass = MetaMuncher):
         if convert_cols is not None:
             for c in convert_cols:
                 ''' please pay attention to the coerce errors here
-                we are not dealing with na's
+                we are not dealing with na's. That's the reason for not using
+                pandas dtype or converters parameter in the constructor
+                I guess we could use converters, but would have to build a
+                custom function calling the pd.converter with errors='coerce'
                 '''
                 self.df[c[0]] = getattr(pd,c[1])(self.df[c[0]],errors='coerce')
         # columns translation
@@ -635,5 +638,20 @@ class DataMuncher(object, metaclass = MetaMuncher):
                 key = lambda x: x[1]):
             print('{}: {}'.format(name, importance))
         print()
+
+    def set_plot_bg_color(self, color):
+        '''
+        Set's the background color of the plot
+        '''
+        bg_color_attrs = [
+            'axes.facecolor',
+            'axes.edgecolor',
+            'figure.facecolor',
+            'figure.edgecolor',
+            'savefig.facecolor',
+            'savefig.edgecolor'
+        ]
+        for attr in bg_color_attrs:
+            matplotlib.rcParams[attr] = color
 
 

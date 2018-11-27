@@ -8,9 +8,20 @@ from scipy import stats
 
 from sklearn import tree, svm
 from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.ensemble import (
+    RandomForestRegressor,
+    GradientBoostingRegressor,
+    GradientBoostingClassifier,
+)
+
 from sklearn.linear_model import LinearRegression, Lasso
-from sklearn.model_selection import train_test_split, KFold, cross_val_score, cross_validate
+from sklearn.model_selection import (
+    train_test_split,
+    KFold,
+    cross_val_score,
+    cross_validate,
+)
+
 from sklearn.metrics import (
     make_scorer,
     explained_variance_score,
@@ -25,12 +36,20 @@ DEFAULT_METRICS = ( r2_score, explained_variance_score,
 SUPPORTED_ALGS = [
     ('knn_regressor', KNeighborsRegressor),
     ('knn_classifier', KNeighborsClassifier),
+
     ('gbt_regressor', GradientBoostingRegressor),
+    ('gbt_classifier', GradientBoostingClassifier),
+
     ('lasso2', Lasso),
+
     ('random_forest_regressor', RandomForestRegressor),
+
     ('support_vector_regressor', svm.SVR),
+
     ('linear_regression', LinearRegression),
+
     ('decision_tree_regressor', tree.DecisionTreeRegressor)
+
 ]
 
 class MetaMuncher(type):

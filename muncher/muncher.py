@@ -583,6 +583,10 @@ class DataMuncher(object, metaclass = MetaMuncher):
         print()
         print('Cross validation scores')
         print('-----------------------')
+        # create a dataframe to save the results
+        # in the end this dataframe will contain two columns, one being the y
+        # and the other being the predictions made during the model training
+        res = pd.DataFrame()
         # do the k-fold
         for k, (train_is, test_is) in enumerate(kf.split(X)):
             # get the X and y train and test sets with the indexes received by
@@ -594,13 +598,17 @@ class DataMuncher(object, metaclass = MetaMuncher):
             # print scores for the respective fold
             print('[fold {0}]: score: {1:.5f}'.
                   format(k, model.score(X_test, y_test)))
-        y_pred = model.predict(X_test)
+            y_pred = model.predict(X_test)
+            # result for this fold
+            k_res = y_test.copy()
+            k_res['{}_fold_pred'.format(k_res.columns[0])] = y_pred
+            res = res.append(k_res)
         # aggregate the indexes and predictions (we should also aggregate the
         # Xs)
         ys = (y_test, y_pred)
         # print the metrics
         self._get_metrics(m_func.__name__, metrics, ys)
-        return (model, ys)
+        return (model, res.sort_index())
 
     def compare_algs(self, dep, df = None):
         '''

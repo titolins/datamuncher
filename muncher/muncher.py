@@ -50,8 +50,7 @@ class MetaMuncher(type):
                 if test_set is not None:
                     # if dep variable in the test set, drop it
                     if dep in test_set:
-                        test_set = test_set[
-                            [c for c in test_set.columns if c != dep]]
+                        test_set = test_set[[c for c in test_set if c != dep]]
                     # append the preiction results
                     test_set['{}_pred'.format(dep)] = model.predict(test_set)
                     return (test_set, k_res)

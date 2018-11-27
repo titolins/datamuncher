@@ -45,8 +45,8 @@ class MetaMuncher(type):
                              test_set = None, metrics = DEFAULT_METRICS,
                              n_splits = 5, **kwargs):
                 df = self._get_df(df)
-                model, k_res = self._run_model(alg_func, dep, test_size, seed, df,
-                                               metrics, n_splits, **kwargs)
+                model, k_res = self._run_model(alg_func, dep, test_size, seed,
+                                               df, metrics, n_splits, **kwargs)
                 if test_set is not None:
                     # if dep variable in the test set, drop it
                     if dep in test_set:

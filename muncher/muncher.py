@@ -572,7 +572,6 @@ class DataMuncher(object, metaclass = MetaMuncher):
         X_train, X_test, y_train, y_test = self.split_data_(df, dep, test_size,
                                                             seed)
         '''
-
         # we need to have those parameters later on..
         kf = KFold(n_splits=5, shuffle = True, random_state=seed)
         # split X and y
@@ -601,11 +600,11 @@ class DataMuncher(object, metaclass = MetaMuncher):
             y_pred = model.predict(X_test)
             # result for this fold
             k_res = y_test.copy()
-            k_res['{}_fold_pred'.format(k_res.columns[0])] = y_pred
+            k_res['{}_fold_pred'.format(dep)] = y_pred
             res = res.append(k_res)
         # aggregate the indexes and predictions (we should also aggregate the
         # Xs)
-        ys = (y_test, y_pred)
+        ys = (res[[dep]], res[[c for c in res if c != dep]])
         # print the metrics
         self._get_metrics(m_func.__name__, metrics, ys)
         return (model, res.sort_index())

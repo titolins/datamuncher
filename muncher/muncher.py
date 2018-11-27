@@ -60,12 +60,12 @@ class MetaMuncher(type):
     def __init__(self, name, bases, d):
         x = type.__init__(self, name, bases, d)
         def alg_wrapper(alg_func):
-            def model_method(self, dep, test_size = .33, seed = 123, df = None,
+            def model_method(self, dep, df = None, test_size = .33, seed = 123,
                              test_set = None, metrics = DEFAULT_METRICS,
                              n_splits = 5, **kwargs):
                 df = self._get_df(df)
-                model, k_res = self._run_model(alg_func, dep, test_size, seed,
-                                               df, metrics, n_splits, **kwargs)
+                model, k_res = self._run_model(alg_func, dep, df, seed,
+                                               metrics, n_splits, **kwargs)
                 if test_set is not None:
                     # if dep variable in the test set, drop it
                     if dep in test_set:
@@ -570,8 +570,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
             print('{}: {}'.format(m.__name__, m(ys[0], ys[1])))
         print()
 
-    def _run_model(self, m_func, dep, test_size, seed, df, metrics, n_splits,
-                   **kwargs):
+    def _run_model(self, m_func, dep, df, seed, metrics, n_splits, **kwargs):
         '''
         Helper method for runinng different methods.
         Args
@@ -579,10 +578,11 @@ class DataMuncher(object, metaclass = MetaMuncher):
             m_func (function) - the model constructor. The class should have a
                 ``fit`` function, in line with sklearn models.
             dep (string) - dependent variable we are trying to predict.
-            test_size (float) - size of the test set to be created from the df.
             seed (int) - seed for the random number generator.
             df (pd.DataFrame) - dataframe to be used if not it's own.
             metrics (list(function)) - list with metric functions
+            n_splits (int) - number of splits the cross validation should use
+            **kwargs - arguments to be passed to the model
 
         Returns
         ----

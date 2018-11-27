@@ -7,7 +7,7 @@ import numpy as np
 from scipy import stats
 
 from sklearn import tree, svm
-from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor, KNeighborsClassifier
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression, Lasso
 from sklearn.model_selection import train_test_split, KFold, cross_val_score, cross_validate
@@ -24,6 +24,7 @@ DEFAULT_METRICS = ( r2_score, explained_variance_score,
                     median_absolute_error )
 SUPPORTED_ALGS = [
     ('knn_regressor', KNeighborsRegressor),
+    ('knn_classifier', KNeighborsClassifier),
     ('gbt_regressor', GradientBoostingRegressor),
     ('lasso2', Lasso),
     ('random_forest_regressor', RandomForestRegressor),
@@ -53,7 +54,7 @@ class MetaMuncher(type):
                             [c for c in test_set.columns if c != dep]]
                     # append the preiction results
                     test_set['{}_pred'.format(dep)] = model.predict(test_set)
-                    return test_set
+                    return (test_set, ys)
                 return (model, ys)
             return model_method
 
@@ -642,6 +643,9 @@ class DataMuncher(object, metaclass = MetaMuncher):
     def set_plot_bg_color(self, color):
         '''
         Set's the background color of the plot
+        Args
+        ----
+            color (string) - background color to be set
         '''
         bg_color_attrs = [
             'axes.facecolor',
@@ -654,4 +658,40 @@ class DataMuncher(object, metaclass = MetaMuncher):
         for attr in bg_color_attrs:
             plt.rcParams[attr] = color
 
+    def set_spines_color(self, ax, spines, color):
+        '''
+        Sets the color for the plot spines
+        Args
+        ----
+            ax (matplotlib.Axis) - axis object to apply the color to
+            spines (string[]) - list of spines (bottom, top, left, right)
+            color (string) - color to be applied
+        '''
+        for s in spines:
+            ax.spines[s].set_color(color)
 
+    def set_axis_labels_ticks_color(self, ax, color):
+        '''
+        Sets both ticklines and ticklabels colors for the x-axis and y-axis
+        Args
+        ----
+            ax (matplotlib.Axis) - axis object to apply the colors to
+            color (string) - color to be applied
+        '''
+        [t.set_color(color) for t in ax.xaxis.get_ticklines()]
+        [l.set_color(color) for l in ax.xaxis.get_ticklabels()]
+        [t.set_color(color) for t in ax.yaxis.get_ticklines()]
+        [l.set_color(color) for l in ax.yaxis.get_ticklabels()]
+
+    def set_spines_labels_ticks_color(self, ax, spines, color):
+        '''
+        Helper method to change spines and labels and ticks all to the same
+        color
+        Args
+        ----
+            ax (matplotlib.Axis) - axis object to apply the color to
+            spines (string[]) - list of spines (bottom, top, left, right)
+            color (string) - color to be applied
+        '''
+        self.set_spines_color(ax, spines, color)
+        self.set_axis_labels_ticks_color(ax, color)

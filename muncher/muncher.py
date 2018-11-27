@@ -575,20 +575,30 @@ class DataMuncher(object, metaclass = MetaMuncher):
 
         # we need to have those parameters later on..
         kf = KFold(n_splits=5, shuffle = True, random_state=seed)
+        # split X and y
         X = df[[c for c in df.columns if c != dep]]
         y = df[[dep]]
+        # build the appropriate model with received parameters
         model = m_func(**kwargs)
         print()
         print('Cross validation scores')
         print('-----------------------')
+        # do the k-fold
         for k, (train_is, test_is) in enumerate(kf.split(X)):
+            # get the X and y train and test sets with the indexes received by
+            # the cross-validation
             X_train, X_test = X.iloc[train_is], X.iloc[test_is]
             y_train, y_test = y.iloc[train_is], y.iloc[test_is]
+            # fit the model
             model = model.fit(X_train, y_train)
+            # print scores for the respective fold
             print('[fold {0}]: score: {1:.5f}'.
                   format(k, model.score(X_test, y_test)))
         y_pred = model.predict(X_test)
+        # aggregate the indexes and predictions (we should also aggregate the
+        # Xs)
         ys = (y_test, y_pred)
+        # print the metrics
         self._get_metrics(m_func.__name__, metrics, ys)
         return (model, ys)
 

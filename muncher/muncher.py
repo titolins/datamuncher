@@ -52,8 +52,9 @@ class MetaMuncher(type):
                     if dep in test_set:
                         test_set = test_set[[c for c in test_set if c != dep]]
                     # append the preiction results
-                    test_set['{}_pred'.format(dep)] = model.predict(test_set)
-                    return (test_set, k_res)
+                    res = test_set(copy=True)
+                    res['{}_pred'.format(dep)] = model.predict(test_set)
+                    return (res, k_res)
                 return (model, k_res)
             return model_method
 

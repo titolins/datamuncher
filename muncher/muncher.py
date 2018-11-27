@@ -43,10 +43,10 @@ class MetaMuncher(type):
         def alg_wrapper(alg_func):
             def model_method(self, dep, test_size = .33, seed = 123, df = None,
                              test_set = None, metrics = DEFAULT_METRICS,
-                             **kwargs):
+                             n_splits = 5, **kwargs):
                 df = self._get_df(df)
-                model, ys = self._run_model(alg_func, dep, test_size, seed, df,
-                                            metrics, **kwargs)
+                model, k_res = self._run_model(alg_func, dep, test_size, seed, df,
+                                               metrics, n_splits, **kwargs)
                 if test_set is not None:
                     # if dep variable in the test set, drop it
                     if dep in test_set:
@@ -54,8 +54,8 @@ class MetaMuncher(type):
                             [c for c in test_set.columns if c != dep]]
                     # append the preiction results
                     test_set['{}_pred'.format(dep)] = model.predict(test_set)
-                    return (test_set, ys)
-                return (model, ys)
+                    return (test_set, k_res)
+                return (model, k_res)
             return model_method
 
         for alg_name, alg_func in SUPPORTED_ALGS:
@@ -551,7 +551,8 @@ class DataMuncher(object, metaclass = MetaMuncher):
             print('{}: {}'.format(m.__name__, m(ys[0], ys[1])))
         print()
 
-    def _run_model(self, m_func, dep, test_size, seed, df, metrics, **kwargs):
+    def _run_model(self, m_func, dep, test_size, seed, df, metrics, n_splits,
+                   **kwargs):
         '''
         Helper method for runinng different methods.
         Args
@@ -573,7 +574,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
                                                             seed)
         '''
         # we need to have those parameters later on..
-        kf = KFold(n_splits=5, shuffle = True, random_state=seed)
+        kf = KFold(n_splits=n_splits, shuffle = True, random_state=seed)
         # split X and y
         X = df[[c for c in df.columns if c != dep]]
         y = df[[dep]]

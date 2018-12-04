@@ -76,9 +76,19 @@ class MetaMuncher(type):
                         test_set = test_set[[c for c in test_set if c != dep]]
                     # append the preiction results
                     res = test_set.copy()
-                    res['{}_pred'.format(dep)] = model.predict(test_set)
+                    pred_col_name = '{}_pred'.format(dep)
+                    res[pred_col_name] = model.predict(test_set)
                     if dep_col is not None:
                         res[dep] = dep_col
+                        print()
+                        print('Prediction accuracy')
+                        print('-------------------')
+                        # get all predictions that are the same as the dep col
+                        true_preds = [
+                            c for c in (res[pred_col_name] == res[dep])
+                            if c is True]
+                        print(len(true_preds)/len(res[dep]))
+                        print()
                     return (res, k_res)
                 return (model, k_res)
             return model_method

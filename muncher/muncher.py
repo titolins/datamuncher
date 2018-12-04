@@ -70,11 +70,15 @@ class MetaMuncher(type):
                                                metrics, n_splits, **kwargs)
                 if test_set is not None:
                     # if dep variable in the test set, drop it
+                    dep_col = None
                     if dep in test_set:
+                        dep_col = test_set[dep]
                         test_set = test_set[[c for c in test_set if c != dep]]
                     # append the preiction results
                     res = test_set.copy()
                     res['{}_pred'.format(dep)] = model.predict(test_set)
+                    if dep_col is not None:
+                        res[dep] = dep_col
                     return (res, k_res)
                 return (model, k_res)
             return model_method
@@ -589,7 +593,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
         Args
         ----
             m_func (function) - the model constructor. The class should have a
-                ``fit`` function, in line with sklearn models.
+                `fit` function, in line with sklearn models.
             dep (string) - dependent variable we are trying to predict.
             seed (int) - seed for the random number generator.
             df (pd.DataFrame) - dataframe to be used if not it's own.

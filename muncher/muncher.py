@@ -679,6 +679,11 @@ class DataMuncher(object, metaclass = MetaMuncher):
         '''
 
     def apply_pca(self, variance_retained, df = None):
+        '''
+        Needs improving. By doing like that, if we have a validation set, we
+        would have to run `apply_pca` twice, which would call `fit` on both
+        train and validation sets (not what should be done).
+        '''
         df = self._get_df(df)
         pca = PCA(variance_retained)
         pca.fit(df)

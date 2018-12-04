@@ -689,3 +689,19 @@ class DataMuncher(object, metaclass = MetaMuncher):
         pca.fit(df)
         return pca.transform(df)
 
+    def dummify(self, col, df = None):
+        '''
+        '''
+        df = self._get_df(df)
+        # build the dummy columns
+        col_dummies = pd.get_dummies(df[col])
+        # change their names to something better
+        col_dummies.columns = ['{}_{}'.format(col, i)
+                               for i in col_dummies.columns]
+        # drop the original column (we don't need it anymore)
+        df = df.drop(columns=[col])
+        # append the dummified columns
+        df = pd.concat([df, col_dummies], axis=1)
+        # return a DataMuncher object
+        return DataMuncher(df = df)
+

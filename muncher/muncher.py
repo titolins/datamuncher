@@ -21,6 +21,7 @@ from sklearn.model_selection import (
     cross_val_score,
     cross_validate,
 )
+from sklearn.decomposition import PCA
 
 from sklearn.metrics import (
     make_scorer,
@@ -28,7 +29,8 @@ from sklearn.metrics import (
     mean_absolute_error,
     mean_squared_error,
     median_absolute_error,
-    r2_score)
+    r2_score,
+)
 
 DEFAULT_METRICS = ( r2_score, explained_variance_score,
                     mean_absolute_error, mean_squared_error,
@@ -186,6 +188,18 @@ class DataMuncher(object, metaclass = MetaMuncher):
         if len(cols) < 1:
             raise ValueError('You should indicate at least one column')
         return DataMuncher(df = df.drop(columns = cols))
+
+    def drop_zero_variance_cols(self, df = None):
+        df = self._get_df(df)
+        return self.drop_cols(
+            [c for c,v in self.get_columns_lower_eq_variance(0, df).items()
+             if v is True],
+            df
+        )
+
+    def get_columns_lower_eq_variance(self, threshold, df = None):
+        df = self._get_df(df)
+        return (df.var() <= threshold).to_dict()
 
     def parse_cols(self, cols_map, df = None):
         '''
@@ -516,7 +530,6 @@ class DataMuncher(object, metaclass = MetaMuncher):
 
     def fill_na_mean(self, labels, df = None):
         '''
-        Fills a given set of columns missing values with the respective means.
 
         Args
         ----
@@ -631,6 +644,7 @@ class DataMuncher(object, metaclass = MetaMuncher):
 
     def compare_algs(self, dep, df = None):
         '''
+        NOT WORKING
         '''
         df = self._get_df(df)
         X, y = df[[c for c in df.columns if c != dep]], df[dep]
@@ -664,4 +678,9 @@ class DataMuncher(object, metaclass = MetaMuncher):
         plt.show()
         '''
 
+    def apply_pca(self, variance_retained, df = None):
+        df = self._get_df(df)
+        pca = PCA(variance_retained)
+        pca.fit(df)
+        return pca.transform(df)
 

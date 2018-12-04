@@ -192,14 +192,14 @@ class DataMuncher(object, metaclass = MetaMuncher):
     def drop_zero_variance_cols(self, df = None):
         df = self._get_df(df)
         return self.drop_cols(
-            [c for c,v in self.get_columns_lower_eq_variance(0, df).items()
-             if v is True],
+            self.get_columns_lower_eq_variance(0, df),
             df
         )
 
     def get_columns_lower_eq_variance(self, threshold, df = None):
         df = self._get_df(df)
-        return (df.var() <= threshold).to_dict()
+        return [c for c,v in (df.var() <= threshold).to_dict().items()
+                if v is True]
 
     def parse_cols(self, cols_map, df = None):
         '''

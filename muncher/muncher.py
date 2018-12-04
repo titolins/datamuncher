@@ -659,7 +659,6 @@ class DataMuncher(object, metaclass = MetaMuncher):
     def compare_algs(self, dep, df = None):
         '''
         NOT WORKING
-        '''
         df = self._get_df(df)
         X, y = df[[c for c in df.columns if c != dep]], df[dep]
         #scoring = 'r2'
@@ -675,22 +674,20 @@ class DataMuncher(object, metaclass = MetaMuncher):
             cv_results = cross_validate(model(), X, y, cv=kf, scoring=scoring)
             results.append(cv_results)
             names.append(name)
-            '''
-            print('{}: {} ({})'.
-                  format(name, cv_results.mean(), cv_results.std()))
-            '''
+            #print('{}: {} ({})'.
+            #      format(name, cv_results.mean(), cv_results.std()))
         for name, result in zip(names, results):
             print('{}: {}'.format(name, result))
         print('')
         # boxplot algorithm comparison
+        #fig = plt.figure()
+        #fig.suptitle('Algorithm Comparison')
+        #ax = fig.add_subplot(111)
+        #plt.boxplot(results)
+        #ax.set_xticklabels(names)
+        #plt.show()
         '''
-        fig = plt.figure()
-        fig.suptitle('Algorithm Comparison')
-        ax = fig.add_subplot(111)
-        plt.boxplot(results)
-        ax.set_xticklabels(names)
-        plt.show()
-        '''
+        raise NotImplementedError
 
     def apply_pca(self, variance_retained, df = None):
         '''

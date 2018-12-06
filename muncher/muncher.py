@@ -69,6 +69,9 @@ class MetaMuncher(type):
                 model, k_res = self._run_model(alg_func, dep, df, seed,
                                                metrics, n_splits, **kwargs)
                 if test_set is not None:
+                    print()
+                    print('Running {} for {}'.format(alg_name, dep))
+                    print('-------------------')
                     # if dep variable in the test set, drop it
                     dep_col = None
                     if dep in test_set:
@@ -80,15 +83,21 @@ class MetaMuncher(type):
                     res[pred_col_name] = model.predict(test_set)
                     if dep_col is not None:
                         res[dep] = dep_col
+                        # print the accuracy
                         print()
                         print('Prediction accuracy')
                         print('-------------------')
                         # get all predictions that are the same as the dep col
+                        # maybe we should instead use the accuracy scorer from
+                        # sklearn
                         true_preds = [
                             c for c in (res[pred_col_name] == res[dep])
                             if c is True]
                         print(len(true_preds)/len(res[dep]))
                         print()
+                        # get the metrics for the predictions
+                        ys = (res[[dep]], res[[pred_col_name]])
+                        self._get_metrics(alg_name, metrics, ys)
                     return (res, k_res)
                 return (model, k_res)
             return model_method
